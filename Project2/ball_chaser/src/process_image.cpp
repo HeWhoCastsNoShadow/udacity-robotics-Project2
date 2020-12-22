@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "ball_chaser/DriveToTarget.h"
 #include <sensor_msgs/Image.h>
+
 class ProcessImageClient
 {
 public:
@@ -11,6 +12,8 @@ public:
 
         // Subscribe to /camera/rgb/image_raw topic to read the image data inside the process_image_callback function
        sub1 = n.subscribe("/camera/rgb/image_raw", 10, &ProcessImageClient::process_image_callback, this);
+       
+       ROS_INFO("process_image ready to detect images.");
     }
     
 private:
@@ -50,6 +53,7 @@ void ProcessImageClient::process_image_callback(const sensor_msgs::Image img)
     int right_portion;
     int middle_portion;
     int idx = 0;
+    unsigned char* rbg_pixel;
     bool white_ball_detected = false;
     
     right_portion = img.step/3;
@@ -57,11 +61,15 @@ void ProcessImageClient::process_image_callback(const sensor_msgs::Image img)
     
     for (int i = 0; i < img.height; i++)
     {
-        for (int j = 0; j < img.step; j++)
+        // Pixel has 3 bytes so traverse pixels by 3 bytes
+        for (int j = 0; j < img.step; j+=3)
         {
+            // get index of the pixel
             idx = (i*img.step) + j;
+            rbg_pixel = (unsigned char*)&img.data[idx];
             
-            if (img.data[idx] == white_pixel)
+            // Check if all RBG elements are white
+            if ((rbg_pixel[0] == white_pixel) && (rbg_pixel[1] == white_pixel) && (rbg_pixel[2] == white_pixel))
             {
                 white_ball_detected = true;
                 
